@@ -454,3 +454,365 @@ body {
     color: var(--warn);
     background-color: var(--warn-soft);
 }
+
+/* Дополнительные стили для форм частей раздела */
+.parts-list {
+    margin-top: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.part-form {
+    margin: 0;
+}
+
+.part-fields-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.part-field {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1 1 160px;
+    font-size: 12px;
+}
+
+.part-field label {
+    color: #6b7280;
+}
+
+.part-field input,
+.part-field select {
+    padding: 6px 8px;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+    font-size: 13px;
+}
+
+.part-field input:focus,
+.part-field select:focus {
+    outline: none;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.25);
+}
+
+.part-actions-row {
+    margin-top: 10px;
+    display: flex;
+    justify-content: flex-end;
+}
+
+/* Дополнительные стили для форм частей раздела */
+.parts-list {
+    margin-top: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.part-form {
+    margin: 0;
+}
+
+.part-fields-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.part-field {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1 1 160px;
+    font-size: 12px;
+}
+
+.part-field label {
+    color: #6b7280;
+}
+
+.part-field input,
+.part-field select {
+    padding: 6px 8px;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+    font-size: 13px;
+}
+
+.part-field input:focus,
+.part-field select:focus {
+    outline: none;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.25);
+}
+
+.part-actions-row {
+    margin-top: 10px;
+    display: flex;
+    justify-content: flex-end;
+}
+
+/* Дополнительные стили для форм частей раздела */
+.parts-list {
+    margin-top: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.part-form {
+    margin: 0;
+}
+
+.part-fields-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.part-field {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1 1 160px;
+    font-size: 12px;
+}
+
+.part-field label {
+    color: #6b7280;
+}
+
+.part-field input,
+.part-field select {
+    padding: 6px 8px;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+    font-size: 13px;
+}
+
+.part-field input:focus,
+.part-field select:focus {
+    outline: none;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.25);
+}
+
+.part-actions-row {
+    margin-top: 10px;
+    display: flex;
+    justify-content: flex-end;
+}
+
+/* Дополнительные стили для форм частей раздела */
+.parts-list {
+    margin-top: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.part-form {
+    margin: 0;
+}
+
+.part-fields-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.part-field {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1 1 160px;
+    font-size: 12px;
+}
+
+.part-field label {
+    color: #6b7280;
+}
+
+.part-field input,
+.part-field select {
+    padding: 6px 8px;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+    font-size: 13px;
+}
+
+.part-field input:focus,
+.part-field select:focus {
+    outline: none;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.25);
+}
+
+.part-actions-row {
+    margin-top: 10px;
+    display: flex;
+    justify-content: flex-end;
+}
+/* Дополнительные стили для форм частей раздела */
+.parts-list {
+    margin-top: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.part-form {
+    margin: 0;
+}
+
+.part-fields-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.part-field {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1 1 160px;
+    font-size: 12px;
+}
+
+.part-field label {
+    color: #6b7280;
+}
+
+.part-field input,
+.part-field select {
+    padding: 6px 8px;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+    font-size: 13px;
+}
+
+.part-field input:focus,
+.part-field select:focus {
+    outline: none;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.25);
+}
+
+.part-actions-row {
+    margin-top: 10px;
+    display: flex;
+    justify-content: flex-end;
+}
+
+/* Дополнительные стили для форм частей раздела */
+.parts-list {
+    margin-top: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.part-form {
+    margin: 0;
+}
+
+.part-fields-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.part-field {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1 1 160px;
+    font-size: 12px;
+}
+
+.part-field label {
+    color: #6b7280;
+}
+
+.part-field input,
+.part-field select {
+    padding: 6px 8px;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+    font-size: 13px;
+}
+
+.part-field input:focus,
+.part-field select:focus {
+    outline: none;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.25);
+}
+
+.part-actions-row {
+    margin-top: 10px;
+    display: flex;
+    justify-content: flex-end;
+}
+/* Дополнительные стили для форм частей раздела */
+.parts-list {
+    margin-top: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.part-form {
+    margin: 0;
+}
+
+.part-fields-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.part-field {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1 1 160px;
+    font-size: 12px;
+}
+
+.part-field label {
+    color: #6b7280;
+}
+
+.part-field input,
+.part-field select {
+    padding: 6px 8px;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+    font-size: 13px;
+}
+
+.part-field input:focus,
+.part-field select:focus {
+    outline: none;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.25);
+}
+
+.part-actions-row {
+    margin-top: 10px;
+    display: flex;
+    justify-content: flex-end;
+}

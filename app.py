@@ -1,4 +1,5 @@
 from functools import wraps
+from datetime import datetime
 
 from flask import (
     Flask,
@@ -14,7 +15,16 @@ from flask import (
 from werkzeug.security import generate_password_hash, check_password_hash
 
 from config import Config
-from models import db, User, ProjectObject, ProjectSection
+from models import db, User, ProjectObject, ProjectSection, ProjectPart
+
+
+def parse_date(value: str):
+    if not value:
+        return None
+    try:
+        return datetime.strptime(value, "%Y-%m-%d").date()
+    except ValueError:
+        return None
 
 
 def create_app() -> Flask:
@@ -23,13 +33,7 @@ def create_app() -> Flask:
 
     db.init_app(app)
 
-    # ---- Внутренние функции для первоначального наполнения БД ----
-
     def seed_objects() -> None:
-        """
-        Заполняем таблицу project_objects списком объектов фазы 2,
-        если она ещё пустая.
-        """
         if ProjectObject.query.count() > 0:
             return
 
@@ -48,7 +52,7 @@ def create_app() -> Flask:
             {"code": "PLGL1-GP.2-000-B02-B02", "short_name": "B02", "full_name": "BA Tip B2"},
             {"code": "PLGL1-GP.2-000-B03-B04", "short_name": "B03–B04", "full_name": "BA Tip B4"},
             {"code": "PLGL1-GP.2-000-B04-B01", "short_name": "B04–B01", "full_name": "BA Tip B1"},
-            {"code": "PLGL1-GP.2-000-B05-B02", "short_name": "B05–B02", "full_name": "BA Tip B2"},
+            {"code": "PLGL1-GP.2-000-B05-B02", "short_name": "B05–B2", "full_name": "BA Tip B2"},
             {"code": "PLGL1-GP.2-000-B06-B1A", "short_name": "B06–B1A", "full_name": "BA Tip B1A"},
             {"code": "PLGL1-GP.2-000-B07-B3A", "short_name": "B07–B3A", "full_name": "BA Tip B3A"},
             {"code": "PLGL1-GP.2-000-B08-B2B", "short_name": "B08–B2B", "full_name": "BA Tip B2B"},
@@ -68,15 +72,7 @@ def create_app() -> Flask:
         db.session.commit()
 
     def seed_sections() -> None:
-        """
-        Для каждого объекта создаём стандартный набор разделов:
-        000 Opšta dokumentacija,
-        010 Arhitektonski projekat,
-        020 Projekat konstrukcije,
-        ...
-        """
         if ProjectSection.query.count() > 0:
-            # Уже что-то есть – считаем, что сидирование не нужно повторять
             return
 
         sections_template = [
@@ -85,14 +81,14 @@ def create_app() -> Flask:
             {"code": "020", "name": "Projekat konstrukcije (Конструктивные решения)"},
             {"code": "030", "name": "Projekat hidrotehničkih instalacija (Водоснабжение и канализация)"},
             {"code": "040", "name": "Projekat elektroenergetskih instalacija (Электроснабжение / ЭОМ)"},
-            {"code": "050", "name": "Projekat elektronske komunikacione mreže (Слаботочные системы / ЭС)"},
-            {"code": "060", "name": "Mašinski projekat – termotehničke instalacije (Отопление)"},
-            {"code": "061", "name": "Projekat mašinskih instalacija – sprinkler instalacije (АУПТ)"},
-            {"code": "062", "name": "Projekat mašinskih instalacija (Вентиляция и кондиционирование)"},
-            {"code": "080", "name": "Projekat saobraćajne signalizacije (Проект дорожного движения)"},
-            {"code": "090", "name": "Projekat uređenja terena (Ландшафтный дизайн)"},
-            {"code": "121", "name": "Elaborat zaštite od požara (Пожарная безопасность)"},
-            {"code": "122", "name": "Elaborat energetske efikasnosti (Энергоэффективность)"},
+            {"code": "050", "name": "Elektronska komunikaciona mreža (Слаботочные системы / ЭС)"},
+            {"code": "060", "name": "Termotehničke instalacije (Отопление)"},
+            {"code": "061", "name": "Sprinkler instalacije (АУПТ)"},
+            {"code": "062", "name": "Ventilacija i klima (Вентиляция и кондиционирование)"},
+            {"code": "080", "name": "Saobraćajna signalizacija (Проект дорожного движения)"},
+            {"code": "090", "name": "Uređenje terena (Ландшафтный дизайн)"},
+            {"code": "121", "name": "Zaštita od požara (Пожарная безопасность)"},
+            {"code": "122", "name": "Energetska efikasnost (Энергоэффективность)"},
             {"code": "125", "name": "Konzervatorski projekat (Консерваторский проект)"},
         ]
 
@@ -112,13 +108,38 @@ def create_app() -> Flask:
 
         db.session.commit()
 
-    # Создаём таблицы и заполняем объекты/разделы при первом запуске
+    def seed_parts() -> None:
+        if ProjectPart.query.count() > 0:
+            return
+
+        parts_template = [
+            "OPŠTA DOKUMENTACIJA (Общая документация)",
+            "TEKSTUALNA DOKUMENTACIJA (Текстовая часть)",
+            "Numerička dokumentacija (Расчёты и сметы)",
+            "GRAFIČKA DOKUMENTACIJA (Графическая документация)",
+            "Finalni album (Финальный альбом, собранный из частей)",
+        ]
+
+        sections = ProjectSection.query.order_by(ProjectSection.id).all()
+        if not sections:
+            return
+
+        for sec in sections:
+            for index, name in enumerate(parts_template, start=1):
+                part = ProjectPart(
+                    section_id=sec.id,
+                    name=name,
+                    order_index=index,
+                )
+                db.session.add(part)
+
+        db.session.commit()
+
     with app.app_context():
         db.create_all()
         seed_objects()
         seed_sections()
-
-    # ----- Декораторы доступа -----
+        seed_parts()
 
     def login_required(view_function):
         @wraps(view_function)
@@ -144,8 +165,6 @@ def create_app() -> Flask:
 
         return wrapped_view
 
-    # ----- Маршруты -----
-
     @app.route("/")
     def index():
         if "user_id" in session:
@@ -154,17 +173,6 @@ def create_app() -> Flask:
 
     @app.route("/register", methods=["GET", "POST"])
     def register():
-        """
-        Регистрация пользователей.
-
-        Первый зарегистрированный пользователь:
-        - автоматически становится администратором;
-        - сразу считается одобренным.
-
-        Все последующие:
-        - обычные пользователи;
-        - по умолчанию НЕ одобрены (ждут одобрения администратором).
-        """
         if request.method == "POST":
             email = request.form.get("email", "").strip().lower()
             name = request.form.get("name", "").strip()
@@ -195,15 +203,9 @@ def create_app() -> Flask:
                     db.session.commit()
 
                     if is_admin:
-                        flash(
-                            "Регистрация администратора прошла успешно. Теперь можно войти.",
-                            "success",
-                        )
+                        flash("Регистрация администратора прошла успешно. Теперь можно войти.", "success")
                     else:
-                        flash(
-                            "Регистрация отправлена. Ожидайте подтверждения аккаунта администратором.",
-                            "success",
-                        )
+                        flash("Регистрация отправлена. Ожидайте подтверждения аккаунта администратором.", "success")
 
                     return redirect(url_for("login"))
 
@@ -223,10 +225,7 @@ def create_app() -> Flask:
                     flash("Неверный email или пароль.", "error")
                 else:
                     if not user.is_approved:
-                        flash(
-                            "Ваш аккаунт ещё не подтверждён администратором.",
-                            "error",
-                        )
+                        flash("Ваш аккаунт ещё не подтверждён администратором.", "error")
                     else:
                         session["user_id"] = user.id
                         session["user_name"] = user.name
@@ -247,7 +246,6 @@ def create_app() -> Flask:
         is_admin = session.get("is_admin", False)
         objects = ProjectObject.query.order_by(ProjectObject.id).all()
 
-        # Пока задач нет – нули, позже подставим реальные значения
         total_tasks = 0
         overdue_tasks = 0
         done_tasks = 0
@@ -274,13 +272,59 @@ def create_app() -> Flask:
         )
         return render_template("object_detail.html", obj=obj, sections=sections)
 
+    @app.route("/sections/<int:section_id>", methods=["GET", "POST"])
+    @login_required
+    def section_detail(section_id: int):
+        section = ProjectSection.query.get_or_404(section_id)
+        obj = section.object
+
+        if request.method == "POST":
+            part_id = request.form.get("part_id")
+            if part_id:
+                part = ProjectPart.query.get_or_404(int(part_id))
+                if part.section_id != section.id:
+                    abort(400)
+
+                part.start_date = parse_date(request.form.get("start_date"))
+                part.end_date = parse_date(request.form.get("end_date"))
+                part.assignee_name = request.form.get("assignee_name") or None
+                part.album_link = request.form.get("album_link") or None
+
+                status = request.form.get("status")
+                allowed_statuses = {"pending", "in_progress", "done", "returned"}
+                if status in allowed_statuses:
+                    part.status = status
+
+                db.session.commit()
+                flash("Данные части обновлены.", "success")
+                return redirect(url_for("section_detail", section_id=section.id))
+
+        parts = (
+            ProjectPart.query
+            .filter_by(section_id=section.id)
+            .order_by(ProjectPart.order_index)
+            .all()
+        )
+
+        status_choices = [
+            ("pending", "В ожидании"),
+            ("in_progress", "В разработке"),
+            ("done", "Выполнено"),
+            ("returned", "Возвращено на доработку"),
+        ]
+
+        return render_template(
+            "section_detail.html",
+            section=section,
+            obj=obj,
+            parts=parts,
+            status_choices=status_choices,
+        )
+
     @app.route("/admin/users", methods=["GET", "POST"])
     @login_required
     @admin_required
     def admin_users():
-        """
-        Админ-страница управления пользователями.
-        """
         if request.method == "POST":
             user_id = request.form.get("user_id")
             action = request.form.get("action")

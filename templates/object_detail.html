@@ -18,7 +18,7 @@
         {% if sections and sections|length > 0 %}
             <div class="object-grid">
                 {% for section in sections %}
-                    <div class="object-card">
+                    <a class="object-card" href="{{ url_for('section_detail', section_id=section.id) }}">
                         <div class="object-code">
                             Раздел {{ section.code }}
                         </div>
@@ -26,7 +26,7 @@
                             {{ section.name }}
                         </div>
                         <div class="object-name-sub">
-                            Части проекта и задачи для этого раздела мы добавим на следующем шаге.
+                            Нажмите, чтобы открыть части проекта и статусы по разделу.
                         </div>
                         <div class="object-progress-bar">
                             <div class="object-progress-fill" style="width: 0%;"></div>
@@ -35,7 +35,7 @@
                             <span class="object-meta-label">Прогресс</span>
                             <span class="object-meta-value">0%</span>
                         </div>
-                    </div>
+                    </a>
                 {% endfor %}
             </div>
         {% else %}

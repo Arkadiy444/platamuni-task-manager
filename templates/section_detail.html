@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="dashboard">
+    <div class="dashboard-header">
+        <div>
+            <h1 class="dashboard-title">
+                {{ obj.short_name }} – Раздел {{ section.code }}
+            </h1>
+            <p class="dashboard-subtitle">
+                Объект: {{ obj.full_name }} ({{ obj.code }})<br>
+                Раздел: {{ section.name }}
+            </p>
+        </div>
+        <div class="dashboard-badges">
+            <a class="header-link" href="{{ url_for('object_detail', object_id=obj.id) }}">← К объекту</a>
+            <a class="header-link" href="{{ url_for('dashboard') }}">Ко всем объектам</a>
+        </div>
+    </div>
+
+    <div class="objects-section">
+        <h2 class="section-title">Части проекта в данном разделе</h2>
+
+        {% if parts and parts|length > 0 %}
+            <p class="dashboard-subtitle">
+                Ниже показана цепочка частей: от общей документации до финального альбома.
+                Для каждой части можно указать даты, статус, исполнителя и ссылку на альбом.
+            </p>
+
+            <div class="parts-list">
+                {% for part in parts %}
+                    <form method="post" class="part-form">
+                        <input type="hidden" name="part_id" value="{{ part.id }}">
+                        <div class="object-card">
+                            <div class="object-name-main">{{ part.name }}</div>
+                            <div class="object-name-sub">
+                                Часть {{ loop.index }} из {{ parts|length }}
+                            </div>
+
+                            <div class="part-fields-row">
+                                <div class="part-field">
+                                    <label>Дата начала</label>
+                                    <input
+                                        type="date"
+                                        name="start_date"
+                                        value="{{ part.start_date.strftime('%Y-%m-%d') if part.start_date else '' }}"
+                                    >
+                                </div>
+                                <div class="part-field">
+                                    <label>Дата завершения</label>
+                                    <input
+                                        type="date"
+                                        name="end_date"
+                                        value="{{ part.end_date.strftime('%Y-%m-%d') if part.end_date else '' }}"
+                                    >
+                                </div>
+                                <div class="part-field">
+                                    <label>Статус</label>
+                                    <select name="status">
+                                        {% for value, label in status_choices %}
+                                            <option value="{{ value }}" {% if part.status == value %}selected{% endif %}>
+                                                {{ label }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="part-fields-row">
+                                <div class="part-field">
+                                    <label>Исполнитель</label>
+                                    <input
+                                        type="text"
+                                        name="assignee_name"
+                                        placeholder="ФИО или отдел"
+                                        value="{{ part.assignee_name or '' }}"
+                                    >
+                                </div>
+                                <div class="part-field">
+                                    <label>Ссылка на альбом</label>
+                                    <input
+                                        type="text"
+                                        name="album_link"
+                                        placeholder="URL / путь к альбому"
+                                        value="{{ part.album_link or '' }}"
+                                    >
+                                </div>
+                            </div>
+
+                            <div class="part-actions-row">
+                                <button class="small-button" type="submit">Сохранить</button>
+                            </div>
+                        </div>
+                    </form>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <h2>Части раздела ещё не заведены</h2>
+                <p>
+                    По умолчанию для каждого раздела создаются 5 частей:
+                    OPŠTA, TEKSTUALNA, Numerička, GRAFIČKA и Финальный альбом.
+                </p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
