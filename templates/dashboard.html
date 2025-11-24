@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="dashboard">
+    <div class="dashboard-header">
+        <div>
+            <h1 class="dashboard-title">Обзор проекта</h1>
+            <p class="dashboard-subtitle">
+                Добро пожаловать, {{ user_name }}. Ниже список объектов фазы 2. Позже к ним добавятся разделы и задачи.
+            </p>
+        </div>
+        <div class="dashboard-badges">
+            <div class="badge-card">
+                <div class="badge-label">Всего задач</div>
+                <div class="badge-value">{{ total_tasks }}</div>
+            </div>
+            <div class="badge-card badge-warning">
+                <div class="badge-label">Просрочено</div>
+                <div class="badge-value">{{ overdue_tasks }}</div>
+            </div>
+            <div class="badge-card badge-success">
+                <div class="badge-label">Выполнено</div>
+                <div class="badge-value">{{ done_tasks }}</div>
+            </div>
+        </div>
+    </div>
+
+    {% if is_admin %}
+        <div class="info-banner">
+            <div class="info-banner-title">Режим администратора</div>
+            <div class="info-banner-text">
+                Используйте раздел «Админка» для управления пользователями. Далее здесь появятся глобальные счётчики задач и просрочек.
+            </div>
+        </div>
+    {% endif %}
+
+    <div class="objects-section">
+        <h2 class="section-title">Объекты фазы 2</h2>
+        {% if objects and objects|length > 0 %}
+            <div class="object-grid">
+                {% for obj in objects %}
+                    <a class="object-card" href="{{ url_for('object_detail', object_id=obj.id) }}">
+                        <div class="object-code">{{ obj.code }}</div>
+                        <div class="object-name-main">{{ obj.short_name }}</div>
+                        <div class="object-name-sub">{{ obj.full_name }}</div>
+                        <div class="object-progress-bar">
+                            <div class="object-progress-fill" style="width: 0%;"></div>
+                        </div>
+                        <div class="object-meta-row">
+                            <span class="object-meta-label">Прогресс</span>
+                            <span class="object-meta-value">0%</span>
+                        </div>
+                    </a>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <h2>Объекты ещё не заведены</h2>
+                <p>
+                    Проверьте инициализацию базы данных. Таблица объектов должна заполняться автоматически при первом запуске приложения.
+                </p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

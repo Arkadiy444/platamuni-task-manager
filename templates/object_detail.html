@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="dashboard">
+    <div class="dashboard-header">
+        <div>
+            <h1 class="dashboard-title">Объект {{ obj.short_name }}</h1>
+            <p class="dashboard-subtitle">
+                {{ obj.full_name }}<br>
+                Код объекта: {{ obj.code }}
+            </p>
+        </div>
+    </div>
+
+    <div class="empty-state">
+        <h2>Структура разделов ещё не настроена</h2>
+        <p>
+            На следующем шаге мы добавим к объекту разделы (000, 010, 020, 030, ...)
+            и внутри них части проекта в виде карточек с датами, статусами и исполнителями.
+        </p>
+    </div>
+</div>
+{% endblock %}

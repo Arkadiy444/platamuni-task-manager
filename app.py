@@ -1,0 +1,272 @@
+from functools import wraps
+
+from flask import (
+    Flask,
+    render_template,
+    redirect,
+    url_for,
+    request,
+    flash,
+    session,
+    abort,
+)
+
+from werkzeug.security import generate_password_hash, check_password_hash
+
+from config import Config
+from models import db, User, ProjectObject
+
+
+def create_app() -> Flask:
+    app = Flask(__name__)
+    app.config.from_object(Config)
+
+    db.init_app(app)
+
+    # ---- Внутренняя функция для начального заполнения объектов ----
+    def seed_objects() -> None:
+        """
+        Заполняем таблицу project_objects списком объектов фазы 2,
+        если она ещё пустая.
+        """
+        if ProjectObject.query.count() > 0:
+            return
+
+        objects_data = [
+            {"code": "PLGL1-GP.2-000-000-SIT", "short_name": "SIT", "full_name": "Ситуационный план"},
+            {"code": "PLGL1-GP.2-000-H01-CEN", "short_name": "H01–H04", "full_name": "Hotel H01–H04"},
+            {"code": "PLGL1-GP.2-000-H05-SOB", "short_name": "H05", "full_name": "Hotel H05"},
+            {"code": "PLGL1-GP.2-000-H06-SOB", "short_name": "H06", "full_name": "Hotel H06"},
+            {"code": "PLGL1-GP.2-000-H07-SOB", "short_name": "H07", "full_name": "Hotel H07"},
+            {"code": "PLGL1-GP.2-000-H08-SOB", "short_name": "H08", "full_name": "Hotel H08"},
+            {"code": "PLGL1-GP.2-000-H09-SOB", "short_name": "H09", "full_name": "Hotel H09"},
+            {"code": "PLGL1-GP.2-000-H10-SOB", "short_name": "H10", "full_name": "Hotel H10"},
+            {"code": "PLGL1-GP.2-000-H11-SOB", "short_name": "H11", "full_name": "Hotel H11"},
+            {"code": "PLGL1-GP.2-000-H12-SOB", "short_name": "H12", "full_name": "Hotel H12"},
+            {"code": "PLGL1-GP.2-000-B01-B03", "short_name": "B01–B03", "full_name": "BA Tip B3"},
+            {"code": "PLGL1-GP.2-000-B02-B02", "short_name": "B02", "full_name": "BA Tip B2"},
+            {"code": "PLGL1-GP.2-000-B03-B04", "short_name": "B03–B04", "full_name": "BA Tip B4"},
+            {"code": "PLGL1-GP.2-000-B04-B01", "short_name": "B04–B01", "full_name": "BA Tip B1"},
+            {"code": "PLGL1-GP.2-000-B05-B02", "short_name": "B05–B02", "full_name": "BA Tip B2"},
+            {"code": "PLGL1-GP.2-000-B06-B1A", "short_name": "B06–B1A", "full_name": "BA Tip B1A"},
+            {"code": "PLGL1-GP.2-000-B07-B3A", "short_name": "B07–B3A", "full_name": "BA Tip B3A"},
+            {"code": "PLGL1-GP.2-000-B08-B2B", "short_name": "B08–B2B", "full_name": "BA Tip B2B"},
+            {"code": "PLGL1-GP.2-000-B09-B2A", "short_name": "B09–B2A", "full_name": "BA Tip B2A"},
+            {"code": "PLGL1-GP.2-000-B10-B3B", "short_name": "B10–B3B", "full_name": "BA Tip B3B"},
+            {"code": "PLGL1-GP.2-000-M02-GAR", "short_name": "GAR", "full_name": "Гараж"},
+        ]
+
+        for item in objects_data:
+            obj = ProjectObject(
+                code=item["code"],
+                short_name=item["short_name"],
+                full_name=item["full_name"],
+            )
+            db.session.add(obj)
+
+        db.session.commit()
+
+    # Создаём таблицы и заполняем объекты при первом запуске
+    with app.app_context():
+        db.create_all()
+        seed_objects()
+
+    # ----- Декораторы доступа -----
+
+    def login_required(view_function):
+        @wraps(view_function)
+        def wrapped_view(**kwargs):
+            if "user_id" not in session:
+                return redirect(url_for("login"))
+            return view_function(**kwargs)
+
+        return wrapped_view
+
+    def admin_required(view_function):
+        @wraps(view_function)
+        def wrapped_view(**kwargs):
+            user_id = session.get("user_id")
+            if user_id is None:
+                return redirect(url_for("login"))
+
+            user = User.query.get(user_id)
+            if user is None or not user.is_admin:
+                return abort(403)
+
+            return view_function(**kwargs)
+
+        return wrapped_view
+
+    # ----- Маршруты -----
+
+    @app.route("/")
+    def index():
+        if "user_id" in session:
+            return redirect(url_for("dashboard"))
+        return redirect(url_for("login"))
+
+    @app.route("/register", methods=["GET", "POST"])
+    def register():
+        """
+        Регистрация пользователей.
+
+        Первый зарегистрированный пользователь:
+        - автоматически становится администратором;
+        - сразу считается одобренным.
+
+        Все последующие:
+        - обычные пользователи;
+        - по умолчанию НЕ одобрены (ждут одобрения администратором).
+        """
+        if request.method == "POST":
+            email = request.form.get("email", "").strip().lower()
+            name = request.form.get("name", "").strip()
+            password = request.form.get("password", "")
+            password_confirm = request.form.get("password_confirm", "")
+
+            if not email or not name or not password or not password_confirm:
+                flash("Заполните все поля.", "error")
+            elif password != password_confirm:
+                flash("Пароли не совпадают.", "error")
+            else:
+                existing_user = User.query.filter_by(email=email).first()
+                if existing_user is not None:
+                    flash("Пользователь с таким email уже существует.", "error")
+                else:
+                    users_count = User.query.count()
+                    is_admin = users_count == 0
+                    is_approved = is_admin
+
+                    new_user = User(
+                        email=email,
+                        name=name,
+                        password_hash=generate_password_hash(password),
+                        is_admin=is_admin,
+                        is_approved=is_approved,
+                    )
+                    db.session.add(new_user)
+                    db.session.commit()
+
+                    if is_admin:
+                        flash(
+                            "Регистрация администратора прошла успешно. Теперь можно войти.",
+                            "success",
+                        )
+                    else:
+                        flash(
+                            "Регистрация отправлена. Ожидайте подтверждения аккаунта администратором.",
+                            "success",
+                        )
+
+                    return redirect(url_for("login"))
+
+        return render_template("register.html")
+
+    @app.route("/login", methods=["GET", "POST"])
+    def login():
+        if request.method == "POST":
+            email = request.form.get("email", "").strip().lower()
+            password = request.form.get("password", "")
+
+            user = User.query.filter_by(email=email).first()
+            if user is None:
+                flash("Неверный email или пароль.", "error")
+            else:
+                if not check_password_hash(user.password_hash, password):
+                    flash("Неверный email или пароль.", "error")
+                else:
+                    if not user.is_approved:
+                        flash(
+                            "Ваш аккаунт ещё не подтверждён администратором.",
+                            "error",
+                        )
+                    else:
+                        session["user_id"] = user.id
+                        session["user_name"] = user.name
+                        session["is_admin"] = user.is_admin
+                        return redirect(url_for("dashboard"))
+
+        return render_template("login.html")
+
+    @app.route("/logout")
+    def logout():
+        session.clear()
+        return redirect(url_for("login"))
+
+    @app.route("/dashboard")
+    @login_required
+    def dashboard():
+        user_name = session.get("user_name", "Пользователь")
+        is_admin = session.get("is_admin", False)
+        objects = ProjectObject.query.order_by(ProjectObject.id).all()
+
+        total_tasks = 0
+        overdue_tasks = 0
+        done_tasks = 0
+
+        return render_template(
+            "dashboard.html",
+            user_name=user_name,
+            is_admin=is_admin,
+            objects=objects,
+            total_tasks=total_tasks,
+            overdue_tasks=overdue_tasks,
+            done_tasks=done_tasks,
+        )
+
+    @app.route("/objects/<int:object_id>")
+    @login_required
+    def object_detail(object_id: int):
+        obj = ProjectObject.query.get_or_404(object_id)
+        return render_template("object_detail.html", obj=obj)
+
+    @app.route("/admin/users", methods=["GET", "POST"])
+    @login_required
+    @admin_required
+    def admin_users():
+        """
+        Админ-страница управления пользователями.
+        """
+        if request.method == "POST":
+            user_id = request.form.get("user_id")
+            action = request.form.get("action")
+
+            if user_id and action:
+                target = User.query.get(int(user_id))
+                current_user_id = session.get("user_id")
+
+                if target:
+                    if action == "approve":
+                        target.is_approved = True
+                    elif action == "revoke":
+                        target.is_approved = False
+                    elif action == "make_admin":
+                        target.is_admin = True
+                    elif action == "remove_admin":
+                        if target.id == current_user_id:
+                            flash("Нельзя снять права администратора с самого себя.", "error")
+                        else:
+                            target.is_admin = False
+                    elif action == "delete":
+                        if target.id == current_user_id:
+                            flash("Нельзя удалить собственный аккаунт.", "error")
+                        else:
+                            db.session.delete(target)
+                            db.session.commit()
+                            flash("Пользователь удалён.", "success")
+                            return redirect(url_for("admin_users"))
+
+                    db.session.commit()
+
+            return redirect(url_for("admin_users"))
+
+        users = User.query.order_by(User.id).all()
+        return render_template("admin_users.html", users=users)
+
+    return app
+
+
+if __name__ == "__main__":
+    application = create_app()
+    application.run(debug=True)
+
