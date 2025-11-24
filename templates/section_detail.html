@@ -19,79 +19,93 @@
     </div>
 
     <div class="objects-section">
-        <h2 class="section-title">Части проекта в данном разделе</h2>
+        <h2 class="section-title">Цепочка частей проекта</h2>
 
         {% if parts and parts|length > 0 %}
             <p class="dashboard-subtitle">
-                Ниже показана цепочка частей: от общей документации до финального альбома.
-                Для каждой части можно указать даты, статус, исполнителя и ссылку на альбом.
+                Карточки идут в технологической последовательности: от общей документации до финального альбома.
+                Нажмите по карточке, чтобы открыть детали и отредактировать поля. Галочка в правом верхнем углу
+                быстро отмечает часть как выполненную.
             </p>
 
-            <div class="parts-list">
+            <div class="parts-chain">
                 {% for part in parts %}
-                    <form method="post" class="part-form">
-                        <input type="hidden" name="part_id" value="{{ part.id }}">
-                        <div class="object-card">
-                            <div class="object-name-main">{{ part.name }}</div>
+                    <div class="part-step-container">
+                        <div
+                            class="object-card part-step part-step-{{ loop.index }} part-status-{{ part.status }} {% if part.is_overdue %}part-overdue{% endif %}"
+                            data-part-id="{{ part.id }}"
+                            data-part-name="{{ part.name | e }}"
+                            data-start-date="{{ part.start_date.strftime('%Y-%m-%d') if part.start_date else '' }}"
+                            data-end-date="{{ part.end_date.strftime('%Y-%m-%d') if part.end_date else '' }}"
+                            data-status="{{ part.status }}"
+                            data-assignee="{{ part.assignee_name or '' }}"
+                            data-album-link="{{ part.album_link or '' }}"
+                        >
+                            <form method="post" class="quick-done-form">
+                                <input type="hidden" name="part_id" value="{{ part.id }}">
+                                <input type="hidden" name="status" value="done">
+                                <button
+                                    type="submit"
+                                    class="quick-done-button"
+                                    title="Отметить как выполнено"
+                                >
+                                    ✓
+                                </button>
+                            </form>
+
+                            <div class="part-title" title="{{ part.name }}">
+                                {{ part.name }}
+                            </div>
                             <div class="object-name-sub">
                                 Часть {{ loop.index }} из {{ parts|length }}
                             </div>
 
-                            <div class="part-fields-row">
-                                <div class="part-field">
-                                    <label>Дата начала</label>
-                                    <input
-                                        type="date"
-                                        name="start_date"
-                                        value="{{ part.start_date.strftime('%Y-%m-%d') if part.start_date else '' }}"
-                                    >
-                                </div>
-                                <div class="part-field">
-                                    <label>Дата завершения</label>
-                                    <input
-                                        type="date"
-                                        name="end_date"
-                                        value="{{ part.end_date.strftime('%Y-%m-%d') if part.end_date else '' }}"
-                                    >
-                                </div>
-                                <div class="part-field">
-                                    <label>Статус</label>
-                                    <select name="status">
-                                        {% for value, label in status_choices %}
-                                            <option value="{{ value }}" {% if part.status == value %}selected{% endif %}>
-                                                {{ label }}
-                                            </option>
-                                        {% endfor %}
-                                    </select>
-                                </div>
+                            <div class="part-meta-row">
+                                <span class="part-meta-label">
+                                    Статус:
+                                    {% for value, label in status_choices %}
+                                        {% if value == part.status %}{{ label }}{% endif %}
+                                    {% endfor %}
+                                </span>
                             </div>
 
-                            <div class="part-fields-row">
-                                <div class="part-field">
-                                    <label>Исполнитель</label>
-                                    <input
-                                        type="text"
-                                        name="assignee_name"
-                                        placeholder="ФИО или отдел"
-                                        value="{{ part.assignee_name or '' }}"
-                                    >
-                                </div>
-                                <div class="part-field">
-                                    <label>Ссылка на альбом</label>
-                                    <input
-                                        type="text"
-                                        name="album_link"
-                                        placeholder="URL / путь к альбому"
-                                        value="{{ part.album_link or '' }}"
-                                    >
-                                </div>
+                            <div class="part-meta-row">
+                                <span class="part-meta-label">Начало:</span>
+                                <span class="part-meta-value">
+                                    {% if part.start_date %}{{ part.start_date.strftime('%d.%m.%Y') }}{% else %}—{% endif %}
+                                </span>
                             </div>
 
-                            <div class="part-actions-row">
-                                <button class="small-button" type="submit">Сохранить</button>
+                            <div class="part-meta-row">
+                                <span class="part-meta-label">Дедлайн:</span>
+                                <span class="part-meta-value">
+                                    {% if part.end_date %}{{ part.end_date.strftime('%d.%m.%Y') }}{% else %}—{% endif %}
+                                </span>
+                            </div>
+
+                            <div class="part-meta-row">
+                                <span class="part-meta-label">Исполнитель:</span>
+                                <span class="part-meta-value">
+                                    {% if part.assignee_name %}{{ part.assignee_name }}{% else %}—{% endif %}
+                                </span>
+                            </div>
+
+                            {% if part.album_link %}
+                                <div class="part-meta-row">
+                                    <span class="part-meta-label">Альбом:</span>
+                                    <span class="part-meta-value part-meta-link">{{ part.album_link }}</span>
+                                </div>
+                            {% endif %}
+
+                            <div class="part-hint">
+                                Нажмите по карточке для редактирования деталей.
                             </div>
                         </div>
-                    </form>
+
+                        {% if not loop.last %}
+                            <div class="part-arrow">➜</div>
+                        {% endif %}
+                    </div>
                 {% endfor %}
             </div>
         {% else %}
@@ -105,4 +119,153 @@
         {% endif %}
     </div>
 </div>
+
+<div id="editModal" class="modal">
+    <div class="modal-backdrop"></div>
+    <div class="modal-dialog">
+        <div class="modal-header">
+            <h2 id="modalTitle">Редактирование части</h2>
+            <button type="button" class="modal-close" id="modalCloseBtn">×</button>
+        </div>
+        <form method="post" id="modalForm">
+            <input type="hidden" name="part_id" id="modalPartId">
+
+            <div class="part-fields-row">
+                <div class="part-field">
+                    <label>Дата начала</label>
+                    <input type="date" name="start_date" id="modalStartDate">
+                </div>
+                <div class="part-field">
+                    <label>Дата завершения</label>
+                    <input type="date" name="end_date" id="modalEndDate">
+                </div>
+            </div>
+
+            <div class="part-fields-row">
+                <div class="part-field">
+                    <label>Статус</label>
+                    <select name="status" id="modalStatus">
+                        {% for value, label in status_choices %}
+                            <option value="{{ value }}">{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="part-field">
+                    <label>Исполнитель</label>
+                    <input
+                        type="text"
+                        name="assignee_name"
+                        id="modalAssignee"
+                        placeholder="ФИО или отдел"
+                    >
+                </div>
+            </div>
+
+            <div class="part-fields-row">
+                <div class="part-field">
+                    <label>Ссылка на альбом</label>
+                    <input
+                        type="text"
+                        name="album_link"
+                        id="modalAlbumLink"
+                        placeholder="URL / путь к альбому"
+                    >
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" class="small-button secondary" id="modalCancelBtn">
+                    Отмена
+                </button>
+                <button type="submit" class="small-button primary-cta">
+                    Сохранить
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+(function () {
+    var modal = document.getElementById("editModal");
+    if (!modal) return;
+
+    var modalForm = document.getElementById("modalForm");
+    var modalTitle = document.getElementById("modalTitle");
+    var modalPartId = document.getElementById("modalPartId");
+    var inputStart = document.getElementById("modalStartDate");
+    var inputEnd = document.getElementById("modalEndDate");
+    var inputStatus = document.getElementById("modalStatus");
+    var inputAssignee = document.getElementById("modalAssignee");
+    var inputAlbum = document.getElementById("modalAlbumLink");
+    var closeBtn = document.getElementById("modalCloseBtn");
+    var cancelBtn = document.getElementById("modalCancelBtn");
+
+    function openModal(card) {
+        modalPartId.value = card.dataset.partId || "";
+        modalTitle.textContent = "Редактирование: " + (card.dataset.partName || "части");
+        inputStart.value = card.dataset.startDate || "";
+        inputEnd.value = card.dataset.endDate || "";
+        inputStatus.value = card.dataset.status || "pending";
+        inputAssignee.value = card.dataset.assignee || "";
+        inputAlbum.value = card.dataset.albumLink || "";
+        modal.classList.add("modal-visible");
+    }
+
+    function closeModal() {
+        modal.classList.remove("modal-visible");
+    }
+
+    var cards = document.querySelectorAll(".part-step");
+    for (var i = 0; i < cards.length; i++) {
+        cards[i].addEventListener("click", function (e) {
+            if (e.target.closest(".quick-done-form")) {
+                return;
+            }
+            openModal(this);
+        });
+    }
+
+    if (closeBtn) {
+        closeBtn.addEventListener("click", function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            closeModal();
+        });
+    }
+
+    if (cancelBtn) {
+        cancelBtn.addEventListener("click", function (e) {
+            e.preventDefault();
+            closeModal();
+        });
+    }
+
+    modal.addEventListener("click", function (e) {
+        if (e.target.classList.contains("modal-backdrop")) {
+            closeModal();
+        }
+    });
+
+    document.addEventListener("keydown", function (e) {
+        e = e || window.event;
+        if (e.key === "Escape" || e.key === "Esc" || e.keyCode === 27) {
+            closeModal();
+        }
+    });
+
+    var quickForms = document.querySelectorAll(".quick-done-form");
+    for (var j = 0; j < quickForms.length; j++) {
+        quickForms[j].addEventListener("click", function (e) {
+            e.stopPropagation();
+        });
+    }
+
+    if (modalForm) {
+        modalForm.addEventListener("submit", function () {
+            closeModal();
+        });
+    }
+})();
+</script>
 {% endblock %}

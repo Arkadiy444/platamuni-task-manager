@@ -1,5 +1,5 @@
 from functools import wraps
-from datetime import datetime
+from datetime import datetime, date
 
 from flask import (
     Flask,
@@ -19,6 +19,7 @@ from models import db, User, ProjectObject, ProjectSection, ProjectPart
 
 
 def parse_date(value: str):
+    """Преобразование строки YYYY-MM-DD в date, либо None."""
     if not value:
         return None
     try:
@@ -32,6 +33,8 @@ def create_app() -> Flask:
     app.config.from_object(Config)
 
     db.init_app(app)
+
+    # ---- Первичное наполнение БД ----
 
     def seed_objects() -> None:
         if ProjectObject.query.count() > 0:
@@ -52,7 +55,7 @@ def create_app() -> Flask:
             {"code": "PLGL1-GP.2-000-B02-B02", "short_name": "B02", "full_name": "BA Tip B2"},
             {"code": "PLGL1-GP.2-000-B03-B04", "short_name": "B03–B04", "full_name": "BA Tip B4"},
             {"code": "PLGL1-GP.2-000-B04-B01", "short_name": "B04–B01", "full_name": "BA Tip B1"},
-            {"code": "PLGL1-GP.2-000-B05-B02", "short_name": "B05–B2", "full_name": "BA Tip B2"},
+            {"code": "PLGL1-GP.2-000-B05-B02", "short_name": "B05–B02", "full_name": "BA Tip B2"},
             {"code": "PLGL1-GP.2-000-B06-B1A", "short_name": "B06–B1A", "full_name": "BA Tip B1A"},
             {"code": "PLGL1-GP.2-000-B07-B3A", "short_name": "B07–B3A", "full_name": "BA Tip B3A"},
             {"code": "PLGL1-GP.2-000-B08-B2B", "short_name": "B08–B2B", "full_name": "BA Tip B2B"},
@@ -141,6 +144,8 @@ def create_app() -> Flask:
         seed_sections()
         seed_parts()
 
+    # ----- Декораторы доступа -----
+
     def login_required(view_function):
         @wraps(view_function)
         def wrapped_view(**kwargs):
@@ -164,6 +169,8 @@ def create_app() -> Flask:
             return view_function(**kwargs)
 
         return wrapped_view
+
+    # ----- Маршруты -----
 
     @app.route("/")
     def index():
@@ -285,10 +292,17 @@ def create_app() -> Flask:
                 if part.section_id != section.id:
                     abort(400)
 
-                part.start_date = parse_date(request.form.get("start_date"))
-                part.end_date = parse_date(request.form.get("end_date"))
-                part.assignee_name = request.form.get("assignee_name") or None
-                part.album_link = request.form.get("album_link") or None
+                if "start_date" in request.form:
+                    part.start_date = parse_date(request.form.get("start_date"))
+
+                if "end_date" in request.form:
+                    part.end_date = parse_date(request.form.get("end_date"))
+
+                if "assignee_name" in request.form:
+                    part.assignee_name = request.form.get("assignee_name") or None
+
+                if "album_link" in request.form:
+                    part.album_link = request.form.get("album_link") or None
 
                 status = request.form.get("status")
                 allowed_statuses = {"pending", "in_progress", "done", "returned"}
@@ -305,6 +319,13 @@ def create_app() -> Flask:
             .order_by(ProjectPart.order_index)
             .all()
         )
+
+        today = date.today()
+        for p in parts:
+            if p.end_date and p.end_date < today and p.status != "done":
+                p.is_overdue = True
+            else:
+                p.is_overdue = False
 
         status_choices = [
             ("pending", "В ожидании"),
