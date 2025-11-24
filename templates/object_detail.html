@@ -12,12 +12,41 @@
         </div>
     </div>
 
-    <div class="empty-state">
-        <h2>Структура разделов ещё не настроена</h2>
-        <p>
-            На следующем шаге мы добавим к объекту разделы (000, 010, 020, 030, ...)
-            и внутри них части проекта в виде карточек с датами, статусами и исполнителями.
-        </p>
+    <div class="objects-section">
+        <h2 class="section-title">Разделы проекта для данного объекта</h2>
+
+        {% if sections and sections|length > 0 %}
+            <div class="object-grid">
+                {% for section in sections %}
+                    <div class="object-card">
+                        <div class="object-code">
+                            Раздел {{ section.code }}
+                        </div>
+                        <div class="object-name-main">
+                            {{ section.name }}
+                        </div>
+                        <div class="object-name-sub">
+                            Части проекта и задачи для этого раздела мы добавим на следующем шаге.
+                        </div>
+                        <div class="object-progress-bar">
+                            <div class="object-progress-fill" style="width: 0%;"></div>
+                        </div>
+                        <div class="object-meta-row">
+                            <span class="object-meta-label">Прогресс</span>
+                            <span class="object-meta-value">0%</span>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <h2>Разделы ещё не заведены</h2>
+                <p>
+                    По умолчанию для каждого объекта создаётся стандартный набор разделов
+                    (000, 010, 020, 030, 040, 050, 060, 061, 062, 080, 090, 121, 122, 125).
+                </p>
+            </div>
+        {% endif %}
     </div>
 </div>
 {% endblock %}

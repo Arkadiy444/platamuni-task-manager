@@ -14,7 +14,7 @@ from flask import (
 from werkzeug.security import generate_password_hash, check_password_hash
 
 from config import Config
-from models import db, User, ProjectObject
+from models import db, User, ProjectObject, ProjectSection
 
 
 def create_app() -> Flask:
@@ -23,7 +23,8 @@ def create_app() -> Flask:
 
     db.init_app(app)
 
-    # ---- Внутренняя функция для начального заполнения объектов ----
+    # ---- Внутренние функции для первоначального наполнения БД ----
+
     def seed_objects() -> None:
         """
         Заполняем таблицу project_objects списком объектов фазы 2,
@@ -66,10 +67,56 @@ def create_app() -> Flask:
 
         db.session.commit()
 
-    # Создаём таблицы и заполняем объекты при первом запуске
+    def seed_sections() -> None:
+        """
+        Для каждого объекта создаём стандартный набор разделов:
+        000 Opšta dokumentacija,
+        010 Arhitektonski projekat,
+        020 Projekat konstrukcije,
+        ...
+        """
+        if ProjectSection.query.count() > 0:
+            # Уже что-то есть – считаем, что сидирование не нужно повторять
+            return
+
+        sections_template = [
+            {"code": "000", "name": "Opšta dokumentacija (Описательная документация)"},
+            {"code": "010", "name": "Arhitektonski projekat (Архитектурный проект)"},
+            {"code": "020", "name": "Projekat konstrukcije (Конструктивные решения)"},
+            {"code": "030", "name": "Projekat hidrotehničkih instalacija (Водоснабжение и канализация)"},
+            {"code": "040", "name": "Projekat elektroenergetskih instalacija (Электроснабжение / ЭОМ)"},
+            {"code": "050", "name": "Projekat elektronske komunikacione mreže (Слаботочные системы / ЭС)"},
+            {"code": "060", "name": "Mašinski projekat – termotehničke instalacije (Отопление)"},
+            {"code": "061", "name": "Projekat mašinskih instalacija – sprinkler instalacije (АУПТ)"},
+            {"code": "062", "name": "Projekat mašinskih instalacija (Вентиляция и кондиционирование)"},
+            {"code": "080", "name": "Projekat saobraćajne signalizacije (Проект дорожного движения)"},
+            {"code": "090", "name": "Projekat uređenja terena (Ландшафтный дизайн)"},
+            {"code": "121", "name": "Elaborat zaštite od požara (Пожарная безопасность)"},
+            {"code": "122", "name": "Elaborat energetske efikasnosti (Энергоэффективность)"},
+            {"code": "125", "name": "Konzervatorski projekat (Консерваторский проект)"},
+        ]
+
+        objects = ProjectObject.query.order_by(ProjectObject.id).all()
+        if not objects:
+            return
+
+        for obj in objects:
+            for index, section in enumerate(sections_template, start=1):
+                sec = ProjectSection(
+                    object_id=obj.id,
+                    code=section["code"],
+                    name=section["name"],
+                    order_index=index,
+                )
+                db.session.add(sec)
+
+        db.session.commit()
+
+    # Создаём таблицы и заполняем объекты/разделы при первом запуске
     with app.app_context():
         db.create_all()
         seed_objects()
+        seed_sections()
 
     # ----- Декораторы доступа -----
 
@@ -200,6 +247,7 @@ def create_app() -> Flask:
         is_admin = session.get("is_admin", False)
         objects = ProjectObject.query.order_by(ProjectObject.id).all()
 
+        # Пока задач нет – нули, позже подставим реальные значения
         total_tasks = 0
         overdue_tasks = 0
         done_tasks = 0
@@ -218,7 +266,13 @@ def create_app() -> Flask:
     @login_required
     def object_detail(object_id: int):
         obj = ProjectObject.query.get_or_404(object_id)
-        return render_template("object_detail.html", obj=obj)
+        sections = (
+            ProjectSection.query
+            .filter_by(object_id=object_id)
+            .order_by(ProjectSection.order_index)
+            .all()
+        )
+        return render_template("object_detail.html", obj=obj, sections=sections)
 
     @app.route("/admin/users", methods=["GET", "POST"])
     @login_required
@@ -269,4 +323,3 @@ def create_app() -> Flask:
 if __name__ == "__main__":
     application = create_app()
     application.run(debug=True)
-

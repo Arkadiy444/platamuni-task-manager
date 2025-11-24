@@ -39,3 +39,38 @@ class ProjectObject(db.Model):
     full_name = db.Column(db.String(255), nullable=False)
 
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+
+    # Связанные разделы (000,010,020,030,040...)
+    sections = db.relationship("ProjectSection", back_populates="object", lazy=True)
+
+
+class ProjectSection(db.Model):
+    """
+    Раздел проекта внутри конкретного объекта:
+    000 Opšta dokumentacija,
+    010 Arhitektonski projekat,
+    020 Projekat konstrukcije,
+    ...
+    """
+
+    __tablename__ = "project_sections"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    # Привязка к объекту (Hotel H06, SIT, GAR и т.д.)
+    object_id = db.Column(db.Integer, db.ForeignKey("project_objects.id"), nullable=False)
+
+    # Код раздела: 000, 010, 020, 030, 040, 050, 060, 061, 062, 080, 090, 121, 122, 125
+    code = db.Column(db.String(8), nullable=False)
+
+    # Имя раздела (билингвально, чтобы было понятно всем):
+    # например: "Opšta dokumentacija (Описательная документация)"
+    name = db.Column(db.String(255), nullable=False)
+
+    # Порядок сортировки, чтобы не путать 000/010/020...
+    order_index = db.Column(db.Integer, nullable=False)
+
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+
+    # Обратная связь на объект
+    object = db.relationship("ProjectObject", back_populates="sections")
